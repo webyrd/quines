@@ -54,7 +54,7 @@ Finally, enter the following Scheme expression to exercise the quine system and 
 (run 1 (q) (eval-expo q '() q))
 ```
 
-You should see the following (formatted for readibility):
+You should see the following (formatted for readability):
 
 ```scheme
 ((((lambda (_.0)
