@@ -6,6 +6,36 @@ Relational interpreter in miniKanren that can generate quines
 > It's quine time!
 > -- Daniel P. Friedman
 
+
+Update -- 29 Sept 2012
+======================
+
+We have taken the liberty to veer ever so slightly from the transcript
+(please work from `talk.scm` instead), since we now have a side-effect
+free version of the implementation.  This means that we have replaced
+
+```
+(define no-closureo (not-in 'closure))
+```
+
+and
+
+```
+(no-closureo x)
+```
+
+by a single goal
+
+```
+(noo 'closure x).
+```
+
+This also allows the `noo` expression to appear anywhere a goal can
+appear, provided the first argument to `noo` is a symbol and the second
+argument is any term. This is the only change and today we saw a
+generation of four thrines, which you can see in `q.scm`.
+
+
 Requirements
 ============
 
@@ -62,6 +92,7 @@ You should see the following (formatted for readability):
    '(lambda (_.0)
       (list _.0 (list 'quote _.0))))
   (=/= ((_.0 . list))
+       ((_.0 . closure))
        ((_.0 . quote)))
   (sym _.0)))
 ```
