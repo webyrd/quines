@@ -74,11 +74,9 @@
 
 (load "mk.scm")
 
-(define no-closureo (not-in 'closure))
-
 (run 1 (q)
   (== `(3 (closure x (x x) ((y . 7))) #t) q)
-  (no-closureo q))
+  (noo 'closure q))
 
 
 ;;; append
@@ -181,7 +179,7 @@
    (lambda (a) a))
  '())
 
-(eval-exp
+'(eval-exp
  '((lambda (lambda) (lambda lambda))
    (lambda (lambda) (lambda lambda)))
  '())
@@ -265,20 +263,18 @@
 
 (load "mk.scm")
 
-(define no-closureo (not-in 'closure))
-
 (define eval-expo
   (lambda (exp env val)
     (conde
       ((fresh (v)
          (== `(quote ,v) exp)
          (not-in-envo 'quote env)
-         (no-closureo v)
+         (noo 'closure v)
          (== v val)))
       ((fresh (a*)
          (== `(list . ,a*) exp)
          (not-in-envo 'list env)
-         (no-closureo a*)
+         (noo 'closure a*)
          (proper-listo a* env val)))
       ((symbolo exp) (lookupo exp env val))
       ((fresh (rator rand x body env^ a)

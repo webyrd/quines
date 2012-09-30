@@ -1,33 +1,20 @@
 (load "mk.scm")
 (load "numbers.scm")
 
-(define no-closureo (not-in 'closure))
-(define no-into (not-in 'into))
-
-(define ext-env*o
-  (lambda (x* a* env out)
-    (conde
-      ((== '() x*) (== '() a*) (== env out))
-      ((fresh (x a dx* da* env^)
-         (== `(,x . ,dx*) x*)
-         (== `(,a . ,da*) a*)
-         (== `((,x . ,a) . ,env) env^)
-         (ext-env*o dx* da* env^ out))))))
-
 (define number-primo
   (lambda (exp env val)
     (fresh (n)
-      (== `(numo ,n) exp)
-      (== `(into ,n) val)
+      (== `(intexp ,n) exp)
+      (== `(intval ,n) val)
       (not-in-envo 'numo env))))
 
 (define sub1-primo
   (lambda (exp env val)
     (fresh (e n n-1)
       (== `(sub1 ,e) exp)
-      (== `(into ,n-1) val)
+      (== `(intval ,n-1) val)
       (not-in-envo 'sub1 env)
-      (eval-expo e env `(into ,n))
+      (eval-expo e env `(intval ,n))
       (minuso n '(1) n-1))))
 
 (define zero?-primo
@@ -38,16 +25,16 @@
         ((zeroo n) (== #t val))
         ((poso n) (== #f val)))
       (not-in-envo 'zero? env)
-      (eval-expo e env `(into ,n)))))
+      (eval-expo e env `(intval ,n)))))
 
 (define *-primo
   (lambda (exp env val)
     (fresh (e1 e2 n1 n2 n3)
       (== `(* ,e1 ,e2) exp)
-      (== `(into ,n3) val)
+      (== `(intval ,n3) val)
       (not-in-envo '* env)
-      (eval-expo e1 env `(into ,n1))
-      (eval-expo e2 env `(into ,n2))
+      (eval-expo e1 env `(intval ,n1))
+      (eval-expo e2 env `(intval ,n2))
       (*o n1 n2 n3))))
 
 (define if-primo
@@ -104,95 +91,93 @@
         ((== y x) (== v t))
         ((=/= y x) (lookupo x rest t))))))
 
-(test-check "push-down problens 2"
-  (run* (q) (fresh (x a d) (no-into x) (== 'into a) (== `(,a . ,d) x)))
+(test-check "push-down problems 2"
+  (run* (q) (fresh (x a d) (noo 'intval x) (== 'intval a) (== `(,a . ,d) x)))
   '())
   
 (test-check "push-down problems 3"
-  (run* (q) (fresh (x a d) (== `(,a . ,d) x) (no-into x) (== 'into a)))
+  (run* (q) (fresh (x a d) (== `(,a . ,d) x) (noo 'intval x) (== 'intval a)))
   '())
 
 (test-check "push-down problems 4"
-  (run* (q) (fresh (x a d) (== `(,a . ,d) x) (== 'into a) (no-into x)))
+  (run* (q) (fresh (x a d) (== `(,a . ,d) x) (== 'intval a) (noo 'intval x)))
   '())
 
 (test-check "push-down problems 6"
-  (run* (q) (fresh (x a d) (== 'into a) (== `(,a . ,d) x) (no-into x)))
+  (run* (q) (fresh (x a d) (== 'intval a) (== `(,a . ,d) x) (noo 'intval x)))
   '())
 
 (test-check "push-down problems 1"
-  (run* (q) (fresh (x a d) (no-into x) (== `(,a . ,d) x) (== 'into a)))
+  (run* (q) (fresh (x a d) (noo 'intval x) (== `(,a . ,d) x) (== 'intval a)))
   '())
 
 (test-check "push-down problems 5"
-  (run* (q) (fresh (x a d) (== 'into a) (no-into x) (== `(,a . ,d) x)))
+  (run* (q) (fresh (x a d) (== 'intval a) (noo 'intval x) (== `(,a . ,d) x)))
   '())
 
 
 (test-check "zero?"
-  (run 1 (q) (eval-expo `(zero? (sub1 (numo ,(build-num 1)))) '() q))
+  (run 1 (q) (eval-expo `(zero? (sub1 (intexp ,(build-num 1)))) '() q))
   '(#t))
 
 (test-check "*"
-  (run 1 (q) (eval-expo `(* (numo ,(build-num 3)) (numo ,(build-num 2))) '() `(into ,(build-num 6))))
+  (run 1 (q) (eval-expo `(* (intexp ,(build-num 3)) (intexp ,(build-num 2))) '() `(intval ,(build-num 6))))
   '(_.0))
 
 (test-check "sub1"
-  (run 1 (q) (eval-expo q '() `(into ,(build-num 6))) (== `(sub1 (numo ,(build-num 7))) q))
-  '((sub1 (numo (1 1 1)))))
+  (run 1 (q) (eval-expo q '() `(intval ,(build-num 6))) (== `(sub1 (intexp ,(build-num 7))) q))
+  '((sub1 (intexp (1 1 1)))))
 
 (test-check "sub1 bigger WAIT a minute"
   (run 1 (q)
-    (eval-expo q '() `(into ,(build-num 6)))
-    (== `(sub1 (sub1 (numo ,(build-num 8)))) q))
-  '((sub1 (sub1 (numo (0 0 0 1))))))
+    (eval-expo q '() `(intval ,(build-num 6)))
+    (== `(sub1 (sub1 (intexp ,(build-num 8)))) q))
+  '((sub1 (sub1 (intexp (0 0 0 1))))))
 
 (test-check "sub1 biggest WAIT a minute"
   (run 1 (q)
-    (eval-expo q '() `(into ,(build-num 6)))
-    (== `(sub1 (sub1 (sub1 (numo ,(build-num 9))))) q))
-  '((sub1 (sub1 (sub1 (numo (1 0 0 1)))))))
+    (eval-expo q '() `(intval ,(build-num 6)))
+    (== `(sub1 (sub1 (sub1 (intexp ,(build-num 9))))) q))
+  '((sub1 (sub1 (sub1 (intexp (1 0 0 1)))))))
 
 (test-check "lots of programs to make a 6"
-  (run 12 (q) (eval-expo q '() `(into ,(build-num 6))))
-  '((numo (0 1 1))
-    (sub1 (numo (1 1 1)))
-    (* (numo (1)) (numo (0 1 1)))
-    (* (numo (0 1 1)) (numo (1)))
-    (if #t (numo (0 1 1)) _.0)
-    (* (numo (0 1)) (numo (1 1)))
-    (if #f _.0 (numo (0 1 1)))
-    (sub1 (* (numo (1)) (numo (1 1 1))))
-    (((lambda (_.0) (numo (0 1 1))) #t)
-     (=/= ((_.0 . numo)))
-     (sym _.0))
-    (sub1 (* (numo (1 1 1)) (numo (1))))
-    (sub1 (sub1 (numo (0 0 0 1))))
-    (sub1 (if #t (numo (1 1 1)) _.0))))
+  (run 12 (q) (eval-expo q '() `(intval ,(build-num 6))))
+  '((intexp (0 1 1)) (sub1 (intexp (1 1 1))) (* (intexp (1)) (intexp (0 1 1)))
+  (* (intexp (0 1 1)) (intexp (1)))
+  (if #t (intexp (0 1 1)) _.0)
+  (* (intexp (0 1)) (intexp (1 1)))
+  (if #f _.0 (intexp (0 1 1)))
+  (sub1 (* (intexp (1)) (intexp (1 1 1))))
+  (((lambda (_.0) (intexp (0 1 1))) #t)
+    (=/= ((_.0 . numo)))
+    (sym _.0))
+  (sub1 (* (intexp (1 1 1)) (intexp (1))))
+  (sub1 (sub1 (intexp (0 0 0 1))))
+  (sub1 (if #t (intexp (1 1 1)) _.0))))
 
 (define rel-fact5
   `((lambda (f)
-      ((f f) (numo ,(build-num 5))))
+      ((f f) (intexp ,(build-num 5))))
     (lambda (f)
       (lambda (n)
         (if (zero? n)
-            (numo ,(build-num 1))
+            (intexp ,(build-num 1))
             (* n ((f f) (sub1 n))))))))
 
 (test-check "rel-fact5" 
   (run* (q) (eval-expo rel-fact5 '() q))
-  `((into ,(build-num 120))))
+  `((intval ,(build-num 120))))
 
 (test-check "rel-fact5-backwards" 
   (run 1 (q)
     (eval-expo
      `((lambda (f)
-         ((f ,q) (numo ,(build-num 5))))
+         ((f ,q) (intexp ,(build-num 5))))
        (lambda (f)
          (lambda (n)
            (if (zero? n)
-               (numo ,(build-num 1))
+               (intexp ,(build-num 1))
                (* n ((f f) (sub1 n)))))))
      '()
-     `(into ,(build-num 120))))
+     `(intval ,(build-num 120))))
   `(f))

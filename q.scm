@@ -1,19 +1,17 @@
 (load "mk.scm")
 
-(define no-closureo (not-in 'closure))
-
 (define eval-expo
   (lambda (exp env val)
     (conde
       ((fresh (v)
          (== `(quote ,v) exp)
          (not-in-envo 'quote env)
-         (no-closureo v)
+         (noo 'closure v)
          (== v val)))
       ((fresh (a*)
          (== `(list . ,a*) exp)
          (not-in-envo 'list env)
-         (no-closureo a*)
+         (noo 'closure a*)
          (proper-listo a* env val)))
       ((symbolo exp) (lookupo exp env val))
       ((fresh (rator rand x body env^ a)
@@ -54,3 +52,144 @@
       (conde
         ((== y x) (== v t))
         ((=/= y x) (lookupo x rest t))))))
+
+(test-check "4 thrines"
+  (run 4 (x)
+    (fresh (p q r)
+      (=/= p q)
+      (=/= q r)
+      (eval-expo p '() q)
+      (eval-expo q '() r)
+      (eval-expo r '() p)
+      (== `(,p ,q ,r) x)))
+  '(((''((lambda (_.0)
+           (list 'quote (list 'quote (list _.0 (list 'quote _.0)))))
+         '(lambda (_.0)
+            (list 'quote (list 'quote (list _.0 (list 'quote _.0))))))
+      '((lambda (_.0)
+          (list 'quote (list 'quote (list _.0 (list 'quote _.0)))))
+        '(lambda (_.0)
+           (list 'quote (list 'quote (list _.0 (list 'quote _.0))))))
+      ((lambda (_.0)
+         (list 'quote (list 'quote (list _.0 (list 'quote _.0)))))
+       '(lambda (_.0)
+          (list 'quote (list 'quote (list _.0 (list 'quote _.0)))))))
+     (=/= ((_.0 . closure)) ((_.0 . list)) ((_.0 . quote)))
+     (sym _.0))
+    ((''((lambda (_.0)
+           (list
+             'quote
+             (list
+               'quote
+               (list ((lambda (_.1) _.0) '_.2) (list 'quote _.0)))))
+         '(lambda (_.0)
+            (list
+              'quote
+              (list
+                'quote
+                (list ((lambda (_.1) _.0) '_.2) (list 'quote _.0))))))
+      '((lambda (_.0)
+          (list
+            'quote
+            (list
+              'quote
+              (list ((lambda (_.1) _.0) '_.2) (list 'quote _.0)))))
+        '(lambda (_.0)
+           (list
+             'quote
+             (list
+               'quote
+               (list ((lambda (_.1) _.0) '_.2) (list 'quote _.0))))))
+      ((lambda (_.0)
+         (list
+           'quote
+           (list
+             'quote
+             (list ((lambda (_.1) _.0) '_.2) (list 'quote _.0)))))
+       '(lambda (_.0)
+          (list
+            'quote
+            (list
+              'quote
+              (list ((lambda (_.1) _.0) '_.2) (list 'quote _.0)))))))
+     (=/= ((_.0 . closure)) ((_.0 . lambda)) ((_.0 . list))
+          ((_.0 . quote)) ((_.1 . _.0)) ((_.1 . closure)))
+     (no-closure _.2)
+     (sym _.0 _.1))
+    (('(list
+         '(lambda (_.0)
+            (list
+              'quote
+              (list 'list _.0 (list 'quote (list 'quote _.0)))))
+         '''(lambda (_.0)
+              (list
+                'quote
+                (list 'list _.0 (list 'quote (list 'quote _.0))))))
+      (list
+        '(lambda (_.0)
+           (list
+             'quote
+             (list 'list _.0 (list 'quote (list 'quote _.0)))))
+        '''(lambda (_.0)
+             (list
+               'quote
+               (list 'list _.0 (list 'quote (list 'quote _.0))))))
+      ((lambda (_.0)
+         (list
+           'quote
+           (list 'list _.0 (list 'quote (list 'quote _.0)))))
+       ''(lambda (_.0)
+           (list
+             'quote
+             (list 'list _.0 (list 'quote (list 'quote _.0)))))))
+     (=/= ((_.0 . closure)) ((_.0 . list)) ((_.0 . quote)))
+     (sym _.0))
+    ((''((lambda (_.0)
+           (list
+             ((lambda (_.1) 'quote) '_.2)
+             (list 'quote (list _.0 (list 'quote _.0)))))
+         '(lambda (_.0)
+            (list
+              ((lambda (_.1) 'quote) '_.2)
+              (list 'quote (list _.0 (list 'quote _.0))))))
+      '((lambda (_.0)
+          (list
+            ((lambda (_.1) 'quote) '_.2)
+            (list 'quote (list _.0 (list 'quote _.0)))))
+        '(lambda (_.0)
+           (list
+             ((lambda (_.1) 'quote) '_.2)
+             (list 'quote (list _.0 (list 'quote _.0))))))
+      ((lambda (_.0)
+         (list
+           ((lambda (_.1) 'quote) '_.2)
+           (list 'quote (list _.0 (list 'quote _.0)))))
+       '(lambda (_.0)
+          (list
+            ((lambda (_.1) 'quote) '_.2)
+            (list 'quote (list _.0 (list 'quote _.0)))))))
+     (=/= ((_.0 . closure)) ((_.0 . lambda)) ((_.0 . list))
+          ((_.0 . quote)) ((_.1 . closure)) ((_.1 . quote)))
+     (no-closure _.2)
+     (sym _.0 _.1))))
+
+(test-check "twines proof"
+  (let ([p/q/r (caar (run 1 (x)
+                      (fresh (p q r)
+                        (=/= p q)
+                        (=/= q r)
+                        (eval-expo p '() q)
+                        (eval-expo q '() r)
+                        (eval-expo r '() p)
+                        (== `(,p ,q ,r) x))))])
+    (let ([p (car p/q/r)]
+          [q (cadr p/q/r)]
+          [r (caddr p/q/r)])
+      (and
+       (equal? (eval p) q)
+       (equal? (eval q) r)
+       (equal? (eval r) p)
+       (not (equal? p q))
+       (not (equal? q r))
+       (not (equal? p r)))))
+  #t))

@@ -1,5 +1,6 @@
-;;; miniKanren with =/=, symbolo, numbero, and not-in constraints.
-;;; The constraint handling code should be cleaned up to simplify the implementation.
+;;; miniKanren with =/=, symbolo, numbero, and noo (A new goal) (noo
+;;; 'clasure x).  not-in is gone; there are fewer uses of 'sym; and
+;;; no uses of 'num (except when creating numbero.)
 
 (define-syntax test-check
   (syntax-rules ()
@@ -127,62 +128,62 @@
   (lambda (pr-t)
     (cdr (rhs pr-t))))
 
-(define make-tag
+(define noo
+  (lambda (tag u)
+    (let ((pred (lambda (x) (not (eq? x tag)))))
+      (lambdag@ (a : s c* t)
+        (noo-aux tag u pred a s c* t)))))
+
+(define noo-aux
+  (lambda (tag u pred a s c* t)
+    (let ((u (if (var? u) (walk u s) u)))
+      (cond
+        ((pair? u)
+         (cond
+           ((pred u)
+            (let ((a (noo-aux tag (car u) pred a s c* t)))
+              (and a
+                ((lambdag@ (a : s c* t)
+                   (noo-aux tag (cdr u) pred a s c* t))
+                 a))))
+           (else (mzero))))
+        ((not (var? u))
+         (cond
+           ((pred u) (unit a))
+           (else (mzero))))
+        ((ext-t u tag pred s t) =>
+         (lambda (t0)
+           (cond
+             ((not (eq? t0 t))
+              (let ((t^ (list (car t0))))
+                (let ((c* (subsume t^ c*)))
+                  (unit (subsume-t s c* t0)))))
+             (else (unit a)))))
+        (else (mzero))))))
+
+(define make-flat-tag
   (lambda (tag pred)
-    (letrec ((rec
-      (lambda (u)
-        (lambdag@ (a : s c* t)
-          (let ((u (if (var? u) (walk u s) u)))
-            (cond
-              ((pair? u)
+    (lambda (u)
+      (lambdag@ (a : s c* t)
+        (let ((u (if (var? u) (walk u s) u)))
+          (cond
+            ((not (var? u))
+             (cond
+               ((pred u) (unit a))
+               (else (mzero))))
+            ((ext-t u tag pred s t) =>
+             (lambda (t0)
                (cond
-                 ((pred u)
-                  ((fresh ()
-                     (rec (car u))
-                     (rec (cdr u)))
-                   a))
-                 (else (mzero))))
-              ((not (var? u))
-               (cond
-                 ((pred u) (unit a))
-                 (else (mzero))))
-              ((ext-t u tag pred s t) =>
-               (lambda (t0)
-                 (cond
-                   ((not (eq? t0 t))
-                    (let ((t^ (list (car t0))))
-                      (let ((c* (subsume t^ c*)))
-                        (unit (subsume-t s c* t0)))))
-                   (else (unit a)))))
-              (else (mzero))))))))
-      rec)))
-
-(define *tags* '())
-
-(define name->tag
-  (lambda (name)
-    (if (deep-tag? name)
-      (string->symbol
-        (string-append "no-"
-          (symbol->string name)))
-      name)))
+                 ((not (eq? t0 t))
+                  (let ((t^ (list (car t0))))
+                    (let ((c* (subsume t^ c*)))
+                      (unit (subsume-t s c* t0)))))
+                 (else (unit a)))))
+            (else (mzero))))))))
 
 (define deep-tag?
   (lambda (tag)
-    (memq tag *tags*)))
-
-(define not-in
-  (lambda (tag)
-    (let ((pred (lambda (x) (not (eq? x tag)))))
-      (unless (memq tag *tags*)
-        (set! *tags* (cons tag *tags*)))
-      (make-tag tag pred))))
-
-;;(define no-closureo (not-in 'closure))
-;;(define no-into (not-in 'into))
-
-(define symbolo (make-tag 'sym symbol?))
-(define numbero (make-tag 'num number?))
+    (not (or (eq? tag 'sym) (eq? tag 'num)))))
 
 ;;; We can extend t with a deep tag provided
 ;;; It is not in a singleton c of c* with the same
@@ -205,10 +206,7 @@
 
 (define works-together?
   (lambda (t1 t2)
-    (cond
-      ((and (eq? t1 'sym) (eq? t2 'num)) #f)
-      ((and (eq? t1 'num) (eq? t2 'sym)) #f)
-      (else #t))))
+    (or (deep-tag? t1) (deep-tag? t2))))
 
 (define subsume-t
   (lambda (s c* t)
@@ -219,7 +217,7 @@
       (cond
         ((null? x*) `(,s ,c* ,t))
         (else
-         (let ((c*/t (subsume-c*/t (car x*) c* t)))
+         (let ((c*/t (subsume-c*/t (car x*) s c* t)))
            (loop (cdr x*) (car c*/t) (cdr c*/t))))))))
 
 (define rem-dups
@@ -230,19 +228,21 @@
        (rem-dups (cdr vars)))
       (else (cons (car vars) (rem-dups (cdr vars)))))))
 
-(define have-tag?
-  (lambda (tag x)
+(define have-flat-tag?
+  (lambda (pred x)
     (lambda (pr-t)
-      (and
-        (eq? (lhs pr-t) x)
-        (eq? (pr-t->tag pr-t) tag)))))
+      (let ((tag (pr-t->tag pr-t)))
+        (and
+         (not (deep-tag? tag))
+         (eq? (lhs pr-t) x)
+         (pred tag))))))
 
-(define subsume-c*/t  
-  (lambda (x c* t)
+(define subsume-c*/t
+  (lambda (x s c* t)
     (cond
-      ((exists (have-tag? 'sym x) t)
-       (subsumed-from-t-to-c* x c* t '()))
-      ((exists (have-tag? 'num x) t)
+      ((exists (have-flat-tag? (lambda (u) (eq? u 'sym)) x) t)
+       (subsumed-from-t-to-c* x s c* t '()))
+      ((exists (have-flat-tag? (lambda (u) (not (eq? u 'sym))) x) t)
        `(,c* . ,(drop-from-t x t)))
       (else `(,c* . ,t)))))
 
@@ -255,35 +255,36 @@
       t)))
 
 (define subsumed-from-t-to-c*
-  (lambda (x c* t t^)
+  (lambda (x s c* t t^)
     (cond
       ((null? t) `(,c* . ,t^))
       (else
        (let ((pr-t (car t)))
-         (cond
-           ((and
-              (eq? (lhs pr-t) x)
-              (deep-tag? (pr-t->tag pr-t)))
-            (let ((name (pr-t->tag pr-t)))
-              (subsumed-from-t-to-c* x (new-c* x name c*)
+         (let ((tag (pr-t->tag pr-t))
+               (y (lhs pr-t)))
+           (cond
+             ((and (eq? y x) (deep-tag? tag))
+              (subsumed-from-t-to-c* x s
+                (new-c* x tag c* s)
                 (cdr t)
-                t^)))
-           (else
-             (subsumed-from-t-to-c* x c*
-               (cdr t)
-               (cons (car t) t^)))))))))
+                t^))
+             (else
+              (subsumed-from-t-to-c* x s
+                c*
+                (cdr t)
+                (cons (car t) t^))))))))))
 
 (define new-c*
-  (lambda (x symbol c*)
+  (lambda (x tag c* s)
     (cond
       ((exists
          (lambda (c)
            (and (null? (cdr c))
-             (eq? (lhs (car c)) x)
-             (eq? (rhs (car c)) symbol)))
+             (eq? (walk (lhs (car c)) s) x)
+             (eq? (rhs (car c)) tag)))
          c*)
        c*)
-      (else (cons `((,x . ,symbol)) c*)))))
+      (else (cons `((,x . ,tag)) c*)))))
 
 ;;; End reading here.
 
@@ -298,19 +299,24 @@
     (lambda (pr-c)
       (let ((u (rhs pr-c)))
         (and (not (var? u))
-          (cond
-            ((and (deep-tag? u)
-                  (assq (lhs pr-c) t)))
-            ((assq (lhs pr-c) t) =>
-             (lambda (pr-t)
-               (not ((pr-t->pred pr-t) u))))
-            (else #f)))))))
+          (let ((x (lhs pr-c)))
+            (let ((pr-t (assq x t)))
+              (and pr-t
+                (let ((tag (pr-t->tag pr-t)))
+                  (cond
+                    ((and (deep-tag? tag) (eq? tag u)))
+                    ((not ((pr-t->pred pr-t) u)))
+                    (else #f)))))))))))
 
 (define booleano
   (lambda (x)
     (conde
       ((== #f x))
       ((== #t x)))))
+
+(define symbolo (make-flat-tag 'sym symbol?))
+
+(define numbero (make-flat-tag 'num number?))
 
 (define =/=
   (lambda (u v)
@@ -518,10 +524,18 @@
  
 (define sort-t-vars
   (lambda (pr-t)
-    (let ((name (car pr-t))
+    (let ((tag (car pr-t))
           (x* (sorter (cdr pr-t))))
-      (let ((tag (name->tag name)))
-        `(,tag . ,x*)))))              
+      (let ((reified-tag (tag->reified-tag tag)))
+        `(,reified-tag . ,x*)))))
+
+(define tag->reified-tag
+  (lambda (tag)
+    (if (deep-tag? tag)
+      (string->symbol
+        (string-append "no-"
+          (symbol->string tag)))
+      tag)))
 
 (define lex<=?
   (lambda (x y)
