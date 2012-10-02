@@ -187,10 +187,10 @@
           [q (cadr p/q/r)]
           [r (caddr p/q/r)])
       (and
-       (equal? (eval p) q)
-       (equal? (eval q) r)
-       (equal? (eval r) p)
-       (not (equal? p q))
-       (not (equal? q r))
-       (not (equal? p r)))))
+        (equal? (eval p) q)
+        (equal? (eval q) r)
+        (equal? (eval r) p)
+        (not (equal? p q))
+        (not (equal? q r))
+        (not (equal? p r)))))
   #t)
