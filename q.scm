@@ -176,13 +176,13 @@
 
 (test-check "thrines proof"
   (let ([p/q/r (caar (run 1 (x)
-                      (fresh (p q r)
-                        (=/= p q)
-                        (=/= q r)
-                        (eval-expo p '() q)
-                        (eval-expo q '() r)
-                        (eval-expo r '() p)
-                        (== `(,p ,q ,r) x))))])
+                       (fresh (p q r)
+                         (=/= p q)
+                         (=/= q r)
+                         (eval-expo p '() q)
+                         (eval-expo q '() r)
+                         (eval-expo r '() p)
+                         (== `(,p ,q ,r) x))))])
     (let ([p (car p/q/r)]
           [q (cadr p/q/r)]
           [r (caddr p/q/r)])
