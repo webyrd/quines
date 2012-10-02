@@ -58,6 +58,7 @@
     (fresh (p q r)
       (=/= p q)
       (=/= q r)
+      (=/= p r)
       (eval-expo p '() q)
       (eval-expo q '() r)
       (eval-expo r '() p)
@@ -173,7 +174,7 @@
      (no-closure _.2)
      (sym _.0 _.1))))
 
-(test-check "twines proof"
+(test-check "thrines proof"
   (let ([p/q/r (caar (run 1 (x)
                       (fresh (p q r)
                         (=/= p q)
@@ -192,4 +193,4 @@
        (not (equal? p q))
        (not (equal? q r))
        (not (equal? p r)))))
-  #t))
+  #t)
