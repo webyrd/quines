@@ -43,7 +43,7 @@ Chez Scheme or its free version [Petite Chez Scheme](http://www.scheme.com/downl
 
 ### Petite Chez Scheme quick start
 
-The [Petite Chez Scheme distributions](http://www.scheme.com/download/#sec:petitechezscheme) are located at the [Cadenca Research Systems website](http://www.scheme.com). The [installation instructions](http://www.scheme.com/download/#sec:install) are clear and concise.  A quit rundown of relevant commands are as follows:
+The [Petite Chez Scheme distributions](http://www.scheme.com/download/#sec:petitechezscheme) are located at the [Cadence Research Systems website](http://www.scheme.com). The [installation instructions](http://www.scheme.com/download/#sec:install) are clear and concise.  A quit rundown of relevant commands are as follows:
 
  * To launch Petite Chez Scheme, simple run `petite` at your system command prompt
 
