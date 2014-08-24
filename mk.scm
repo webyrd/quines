@@ -2,6 +2,24 @@
 ;;; 'clasure x).  not-in is gone; there are fewer uses of 'sym; and
 ;;; no uses of 'num (except when creating numbero.)
 
+(define remp
+  (lambda (p ls)
+    (cond
+     ((null? ls) '())
+     ((p (car ls)) (remp p (cdr ls)))
+     (else (cons (car ls) (remp p (cdr ls)))))))
+
+(define (exists p ls)
+  (cond ((null? ls) #f)
+        ((p (car ls)) #t)
+        (else (exists p (cdr ls)))))
+
+(define sorter (lambda (ls) (sort ls lex<=?)))
+
+(define datum->string
+  (lambda (x)
+    (with-output-to-string (lambda () (display x)))))
+
 (define-syntax test-check
   (syntax-rules ()
     ((_ title tested-expression expected-result)
@@ -517,10 +535,6 @@
           ((and (null? c*) (null? p*)) v)
           ((null? c*) `(,v . ,p*))
           (else `(,v (=/= . ,c*) . ,p*)))))))
-
-(define sorter
-  (lambda (ls)
-    (sort lex<=? ls)))
  
 (define sort-t-vars
   (lambda (pr-t)
@@ -540,11 +554,6 @@
 (define lex<=?
   (lambda (x y)
     (string<=? (datum->string x) (datum->string y))))
-  
-(define datum->string
-  (lambda (x)
-    (call-with-string-output-port
-      (lambda (p) (display x p)))))
 
 (define anyvar?
   (lambda (c r)
