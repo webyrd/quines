@@ -14,7 +14,7 @@
         ((p (car ls)) #t)
         (else (exists p (cdr ls)))))
 
-(define sorter (lambda (ls) (sort ls lex<=?)))
+(define sorter (lambda (ls) (list-sort lex<=? ls)))
 
 (define datum->string
   (lambda (x)
